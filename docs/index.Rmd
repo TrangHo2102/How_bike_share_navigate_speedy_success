@@ -1,0 +1,180 @@
+---
+title: "How does a bike-share navigate speedy success?"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Scenario
+
+The marketing analyst team at Cyclistic, a bike-share company in Chicago. The director of marketing believes the company’s future success depends on maximizing the number of annual memberships. Therefore, your team wants to understand how casual riders and annual members use Cyclistic bikes differently. From these insights, your team will design a new marketing strategy to convert casual riders into annual members.
+
+### Ask
+*Three questions will guide the future marketing program:*
+
+  1. **How** do annual members and casual riders use Cyclistic bikes **differently**?
+  
+  2. **Why** would casual riders **buy Cyclistic annual memberships**?
+  
+  3. **How** can Cyclistic use digital media to **influence casual** riders to become members?
+  
+### Prepare
+**data** <https://divvy-tripdata.s3.amazonaws.com/index.html>
+
+Install necessary libraries
+
+```{r library, echo=TRUE}
+library(tidyverse)
+library(ggplot2)
+library(lubridate)
+library(geosphere)
+library(ggmap)
+library(readxl)
+library(dplyr)
+```
+
+Load data into R Studio
+
+```{r Load data, echo=TRUE}
+divvytripdata_202201 <- read.csv("/Users/tranghothu/Documents/Project/Case_study_1_How_does_a_bike_share_navigate_speedy_success/data_raw/Divvy_Trips_2022/202201-divvy-tripdata.csv")
+divvytripdata_202202 <- read.csv("/Users/tranghothu/Documents/Project/Case_study_1_How_does_a_bike_share_navigate_speedy_success/data_raw/Divvy_Trips_2022/202202-divvy-tripdata.csv")
+divvytripdata_202203 <- read.csv("/Users/tranghothu/Documents/Project/Case_study_1_How_does_a_bike_share_navigate_speedy_success/data_raw/Divvy_Trips_2022/202203-divvy-tripdata.csv")
+divvytripdata_202204 <- read.csv("/Users/tranghothu/Documents/Project/Case_study_1_How_does_a_bike_share_navigate_speedy_success/data_raw/Divvy_Trips_2022/202204-divvy-tripdata.csv")
+divvytripdata_202205 <- read.csv("/Users/tranghothu/Documents/Project/Case_study_1_How_does_a_bike_share_navigate_speedy_success/data_raw/Divvy_Trips_2022/202205-divvy-tripdata.csv")
+divvytripdata_202206 <- read.csv("/Users/tranghothu/Documents/Project/Case_study_1_How_does_a_bike_share_navigate_speedy_success/data_raw/Divvy_Trips_2022/202206-divvy-tripdata.csv")
+divvytripdata_202207 <- read.csv("/Users/tranghothu/Documents/Project/Case_study_1_How_does_a_bike_share_navigate_speedy_success/data_raw/Divvy_Trips_2022/202207-divvy-tripdata.csv")
+divvytripdata_202208 <- read.csv("/Users/tranghothu/Documents/Project/Case_study_1_How_does_a_bike_share_navigate_speedy_success/data_raw/Divvy_Trips_2022/202208-divvy-tripdata.csv")
+divvytripdata_202209 <- read.csv("/Users/tranghothu/Documents/Project/Case_study_1_How_does_a_bike_share_navigate_speedy_success/data_raw/Divvy_Trips_2022/202209-divvy-tripdata.csv")
+divvytripdata_202210 <- read.csv("/Users/tranghothu/Documents/Project/Case_study_1_How_does_a_bike_share_navigate_speedy_success/data_raw/Divvy_Trips_2022/202210-divvy-tripdata.csv")
+divvytripdata_202211 <- read.csv("/Users/tranghothu/Documents/Project/Case_study_1_How_does_a_bike_share_navigate_speedy_success/data_raw/Divvy_Trips_2022/202211-divvy-tripdata.csv")
+divvytripdata_202212 <- read.csv("/Users/tranghothu/Documents/Project/Case_study_1_How_does_a_bike_share_navigate_speedy_success/data_raw/Divvy_Trips_2022/202212-divvy-tripdata.csv")
+```
+
+Combine into one datasheet
+
+```{r Combine data, echo=TRUE}
+divvytripdata_2022 <- bind_rows(
+  divvytripdata_202201,
+  divvytripdata_202202,
+  divvytripdata_202203,
+  divvytripdata_202204,
+  divvytripdata_202205,
+  divvytripdata_202206,
+  divvytripdata_202207,
+  divvytripdata_202208,
+  divvytripdata_202209,
+  divvytripdata_202210,
+  divvytripdata_202211,
+  divvytripdata_202212
+)
+```
+
+Quickly review the dataset
+
+```{r Review dataset}
+glimpse(divvytripdata_2022)
+```
+```{r review}
+summary(divvytripdata_2022)
+```
+
+### Process
+
+Clean the dataset
+
+```{r clean data}
+divvytripdata2022_clean <- drop_na(divvytripdata_2022)
+```
+
+Add the columns “ride_length,” “month,” and “day_of_week”
+
+```{r add columns}
+divvytripdata2022_clean <- divvytripdata2022_clean |> 
+  mutate(ride_length = difftime(ended_at,started_at)) |> 
+  mutate(day_of_week = weekdays(as.Date(started_at))) |> 
+  mutate(month = months(as.Date(started_at))) |> 
+  mutate(ride_distance = distGeo(matrix(c(start_lng, start_lat), ncol = 2),
+                                 matrix(c(end_lng,end_lat), ncol = 2)))
+```
+
+### Analyze
+
+Calculating the average ride length and average ride distance.
+
+```{r Calculating AVG ride length & AVG ride distance}
+means <- divvytripdata2022_clean |> 
+  group_by(member_casual) |> 
+  summarise(mean_time = mean(ride_length), mean_distance = mean(ride_distance))
+```
+
+Calculating total of rides and average duration for each day of week and arrange the day of week.
+
+```{r}
+divvytripdata2022_day_vs_rider <- divvytripdata2022_clean |> 
+  group_by(member_casual, day_of_week) |> 
+  summarise(number_of_riders = n(),
+            avg_duration = mean(ride_length),
+            .groups = 'drop')
+
+divvytripdata2022_day_vs_rider$day_of_week <- factor(divvytripdata2022_day_vs_rider$day_of_week,
+                                              levels = c("Monday", "Tuesday", "Wednesday", "Thursday", 
+                                                         "Friday", "Saturday", "Sunday"))
+
+```
+
+### Share
+
+The first visualization shows the average ride length filtered by user type.
+
+```{r plot AVG ride length per weekday}
+ggplot(means, aes(x = member_casual, y = mean_time)) +
+  geom_col(aes(fill = member_casual), show.legend = FALSE) +
+  labs(title = "Mean travel time vs. User type",
+       x = "User Type",
+       y = "Mean travel time (sec)")
+```
+The visualization shows the average ride distance filtered by user type.
+
+```{r plot ride distance per weekday}
+ggplot(means, aes(x = member_casual, y = mean_distance)) +
+  geom_col(aes(fill = member_casual), show.legend = FALSE) +
+  labs(title = "Mean travel distance vs. User type",
+       x = "User Type",
+       y = "Mean travel distance (m)")
+```
+The visualization shows the total rides per weekday.
+
+```{r}
+ggplot(divvytripdata2022_day_vs_rider, aes(x = day_of_week, y = number_of_riders, fill = member_casual)) +
+  geom_col(position = "dodge") +
+  labs(fill = "User type")
+```
+The visualization shows the average rider length per weekday.
+
+```{r Plot AVG rider length per weekday}
+ggplot(divvytripdata2022_day_vs_rider, aes(x = day_of_week, y = avg_duration, fill = member_casual)) +
+  geom_col(position = "dodge") +
+  labs(fill = "User type")
+
+```
+*Using the information I gained from the data I would share the following insights:*
+
+* Casual riders tend to use the bike service more on weekends, enjoying longer leisure rides, whereas member riders use it for commuting every day of the week.
+
+### Act
+
+These trends all suggest that casual riders and member riders use the program for different purposes, and therefore, it is not precisely clear how easy it is to convert casual riders to member riders.
+
+Cyclistic needs more information about the member riders in order to determine the best strategy for attracting more members. A survey of member riders would be a good exploratory step to determine why they joined the program.
+Some questions I would use in the survey would include:
+
+* Why do you use the program?
+
+* Why did you join the membership program?
+
+* How frequently do you use the program?
+
+* How did you learn about the program?
+
+
