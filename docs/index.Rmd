@@ -134,6 +134,7 @@ ggplot(means, aes(x = member_casual, y = mean_time)) +
        x = "User Type",
        y = "Mean travel time (sec)")
 ```
+
 The visualization shows the average ride distance filtered by user type.
 
 ```{r plot ride distance per weekday}
@@ -143,6 +144,7 @@ ggplot(means, aes(x = member_casual, y = mean_distance)) +
        x = "User Type",
        y = "Mean travel distance (m)")
 ```
+
 The visualization shows the total rides per weekday.
 
 ```{r}
@@ -150,6 +152,7 @@ ggplot(divvytripdata2022_day_vs_rider, aes(x = day_of_week, y = number_of_riders
   geom_col(position = "dodge") +
   labs(fill = "User type")
 ```
+
 The visualization shows the average rider length per weekday.
 
 ```{r Plot AVG rider length per weekday}
@@ -158,6 +161,7 @@ ggplot(divvytripdata2022_day_vs_rider, aes(x = day_of_week, y = avg_duration, fi
   labs(fill = "User type")
 
 ```
+
 *Using the information I gained from the data I would share the following insights:*
 
 * Casual riders tend to use the bike service more on weekends, enjoying longer leisure rides, whereas member riders use it for commuting every day of the week.
